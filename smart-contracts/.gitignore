@@ -1,0 +1,14 @@
+# Node
+node_modules/
+package-lock.json
+
+# Hardhat
+cache/
+artifacts/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
