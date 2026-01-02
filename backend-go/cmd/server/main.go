@@ -136,4 +136,38 @@ func main() {
 
 	fmt.Println("✅ Certificate issued successfully")
 	fmt.Println("📦 Stored in block:", receipt.BlockNumber)
+
+		// 1️⃣2️⃣ Verify certificate (hash-based verification)
+	fmt.Println("🔍 Verifying certificate...")
+
+	// Re-create the SAME certificate data (must match exactly)
+	verifyCert := certificate.CertificateData{
+		StudentName: "Rahul Sharma",
+		RollNumber:  "CSE2021012",
+		Course:      "B.Tech Computer Science",
+		University:  "MITS",
+		Year:        "2025",
+	}
+
+	// Re-hash certificate data
+	verifyHash := certificate.HashCertificate(verifyCert)
+	fmt.Println("🔎 Verification hash:", verifyHash)
+
+	// Call smart contract verification function
+	isValid, err := certificateRegistry.VerifyCertificate(
+		&bind.CallOpts{Context: ctx},
+		verifyHash,
+	)
+	if err != nil {
+		log.Fatal("Certificate verification failed:", err)
+	}
+
+	if isValid {
+		fmt.Println("✅ Certificate is VALID")
+	} else {
+		fmt.Println("❌ Certificate is INVALID")
+	}
+
+
+
 }
