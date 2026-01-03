@@ -8,9 +8,9 @@ contract CertificateRegistry {
     DIDRegistry public didRegistry;
 
     struct Certificate {
-        bytes32 certHash;
         address issuer;
         bool isValid;
+        bool exists;
     }
 
     mapping(bytes32 => Certificate) public certificates;
@@ -30,23 +30,40 @@ contract CertificateRegistry {
         _;
     }
 
+    // Issue a new certificate
     function issueCertificate(bytes32 _certHash) public onlyValidIssuer {
-        certificates[_certHash] = Certificate(
-            _certHash,
-            msg.sender,
-            true
-        );
+        require(!certificates[_certHash].exists, "Certificate already exists");
+
+        certificates[_certHash] = Certificate({
+            issuer: msg.sender,
+            isValid: true,
+            exists: true
+        });
 
         emit CertificateIssued(_certHash, msg.sender);
     }
 
+    // Revoke an existing certificate
     function revokeCertificate(bytes32 _certHash) public onlyValidIssuer {
-        require(certificates[_certHash].isValid, "Already revoked");
+        require(certificates[_certHash].exists, "Certificate does not exist");
+        require(certificates[_certHash].isValid, "Certificate already revoked");
+
         certificates[_certHash].isValid = false;
+
         emit CertificateRevoked(_certHash);
     }
 
-    function verifyCertificate(bytes32 _certHash) public view returns (bool) {
-        return certificates[_certHash].isValid;
+    // Verify certificate details
+    function verifyCertificate(bytes32 _certHash)
+        public
+        view
+        returns (
+            bool exists,
+            address issuer,
+            bool isValid
+        )
+    {
+        Certificate memory cert = certificates[_certHash];
+        return (cert.exists, cert.issuer, cert.isValid);
     }
 }
