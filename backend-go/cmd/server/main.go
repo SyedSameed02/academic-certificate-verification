@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 
 	"academic-certificate-verification-backend/blockchain"
@@ -13,91 +12,51 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// Struct to read contracts.json
+// ContractsConfig represents deployed smart contract addresses
+// stored in config/contracts.json
 type ContractsConfig struct {
 	DIDRegistry         string `json:"didRegistry"`
 	CertificateRegistry string `json:"certificateRegistry"`
 }
 
 func main() {
+	// Context is used to control blockchain calls
+	// It allows cancellation and timeouts if needed
 	ctx := context.Background()
 
-	// 1️⃣ Connect to Hardhat node
+	// ------------------------------------------------------------------
+	// STEP 1: Connect to local Hardhat blockchain
+	// ------------------------------------------------------------------
+	// The backend communicates with the blockchain using an RPC endpoint
 	client, err := ethclient.Dial("http://127.0.0.1:8545")
 	if err != nil {
 		log.Fatal("Failed to connect to Ethereum node:", err)
 	}
-	fmt.Println("✅ Connected to Ethereum")
+	fmt.Println("Connected to Ethereum node")
 
-	// 2️⃣ Read deployed contract addresses
+	// ------------------------------------------------------------------
+	// STEP 2: Read deployed contract addresses
+	// ------------------------------------------------------------------
+	// Smart contract addresses are stored after deployment
+	// This avoids hardcoding addresses in code
 	configBytes, err := os.ReadFile("config/contracts.json")
 	if err != nil {
-		log.Fatal("Failed to read config/contracts.json:", err)
+		log.Fatal("Failed to read contracts.json:", err)
 	}
 
-	var contracts ContractsConfig
-	if err := json.Unmarshal(configBytes, &contracts); err != nil {
-		log.Fatal("Invalid contracts.json:", err)
+	var config ContractsConfig
+	if err := json.Unmarshal(configBytes, &config); err != nil {
+		log.Fatal("Failed to parse contracts.json:", err)
 	}
 
-	didRegistryAddress := common.HexToAddress(contracts.DIDRegistry)
-	certificateRegistryAddress := common.HexToAddress(contracts.CertificateRegistry)
-
-	// 3️⃣ Load private key (Hardhat default account #0)
-	privateKeyHex := "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-	privateKey, err := crypto.HexToECDSA(privateKeyHex)
-	if err != nil {
-		log.Fatal("Invalid private key:", err)
-	}
-
-	// 4️⃣ Create transaction signer
-	chainID := big.NewInt(31337)
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
-	if err != nil {
-		log.Fatal("Failed to create transactor:", err)
-	}
-	auth.GasLimit = 3_000_000
-
-	fmt.Println("🧾 Using issuer address:", auth.From.Hex())
-
-	// 5️⃣ Load DIDRegistry contract
-	didRegistry, err := blockchain.NewDIDRegistry(didRegistryAddress, client)
-	if err != nil {
-		log.Fatal("Failed to load DIDRegistry:", err)
-	}
-
-	// 6️⃣ Sanity check: ensure contract exists
-	code, err := client.CodeAt(ctx, didRegistryAddress, nil)
-	if err != nil {
-		log.Fatal("Failed to fetch contract code:", err)
-	}
-	if len(code) == 0 {
-		log.Fatal("No contract code found at DIDRegistry address")
-	}
-	fmt.Println("✅ DIDRegistry contract found")
-
-	// 7️⃣ Register issuer DID
-	fmt.Println("🚀 Registering issuer...")
-	registerTx, err := didRegistry.RegisterIssuer(
-		auth,
-		auth.From,
-		"did:university:mits",
-	)
-	if err != nil {
-		log.Fatal("Issuer registration failed:", err)
-	}
-
-	_, err = bind.WaitMined(ctx, client, registerTx)
-	if err != nil {
-		log.Fatal("Failed waiting for issuer registration tx:", err)
-	}
-	fmt.Println("✅ Issuer registered")
-
-	// 8️⃣ Create certificate data
+	// ------------------------------------------------------------------
+	// STEP 3: Create certificate data (off-chain)
+	// ------------------------------------------------------------------
+	// This represents the original academic certificate information
+	// Blockchain never stores these fields directly
 	cert := certificate.CertificateData{
 		StudentName: "Rahul Sharma",
 		RollNumber:  "CSE2021012",
@@ -106,68 +65,64 @@ func main() {
 		Year:        "2025",
 	}
 
-	// 9️⃣ Hash certificate
+	// ------------------------------------------------------------------
+	// STEP 4: Hash the certificate
+	// ------------------------------------------------------------------
+	// Hashing ensures:
+	// - Integrity (any change alters the hash)
+	// - Privacy (raw data is not stored on-chain)
+	// The same data always produces the same hash
 	certHash := certificate.HashCertificate(cert)
-	fmt.Println("🔐 Certificate hash:", certHash)
 
-	// 🔟 Load CertificateRegistry contract
+	// ------------------------------------------------------------------
+	// STEP 5: Load CertificateRegistry smart contract
+	// ------------------------------------------------------------------
+	// This contract stores and verifies certificate hashes
+	certificateRegistryAddress := common.HexToAddress(config.CertificateRegistry)
+
 	certificateRegistry, err := blockchain.NewCertificateRegistry(
 		certificateRegistryAddress,
 		client,
 	)
 	if err != nil {
-		log.Fatal("Failed to load CertificateRegistry:", err)
+		log.Fatal("Failed to load CertificateRegistry contract:", err)
 	}
 
-	// 1️⃣1️⃣ Issue certificate
-	fmt.Println("🚀 Issuing certificate...")
-	issueTx, err := certificateRegistry.IssueCertificate(
-		auth,
+	// ------------------------------------------------------------------
+	// STEP 6: Call verification function (read-only)
+	// ------------------------------------------------------------------
+	// CallOpts is used for view/pure contract calls
+	// No gas is required because this does not modify blockchain state
+	callOpts := &bind.CallOpts{
+		Context: ctx,
+	}
+
+	// The smart contract returns factual data only:
+	// - exists  : whether the certificate hash was issued
+	// - issuer  : address of issuing institution
+	// - revoked : whether the certificate was invalidated
+	exists, err := certificateRegistry.VerifyCertificate(
+		callOpts,
 		certHash,
-	)
-	if err != nil {
-		log.Fatal("Failed to issue certificate:", err)
-	}
-
-	receipt, err := bind.WaitMined(ctx, client, issueTx)
-	if err != nil {
-		log.Fatal("Failed waiting for certificate issue tx:", err)
-	}
-
-	fmt.Println("✅ Certificate issued successfully")
-	fmt.Println("📦 Stored in block:", receipt.BlockNumber)
-
-		// 1️⃣2️⃣ Verify certificate (hash-based verification)
-	fmt.Println("🔍 Verifying certificate...")
-
-	// Re-create the SAME certificate data (must match exactly)
-	verifyCert := certificate.CertificateData{
-		StudentName: "Rahul Sharma",
-		RollNumber:  "CSE2021012",
-		Course:      "B.Tech Computer Science",
-		University:  "MITS",
-		Year:        "2025",
-	}
-
-	// Re-hash certificate data
-	verifyHash := certificate.HashCertificate(verifyCert)
-	fmt.Println("🔎 Verification hash:", verifyHash)
-
-	// Call smart contract verification function
-	isValid, err := certificateRegistry.VerifyCertificate(
-		&bind.CallOpts{Context: ctx},
-		verifyHash,
 	)
 	if err != nil {
 		log.Fatal("Certificate verification failed:", err)
 	}
 
-	if isValid {
-		fmt.Println("✅ Certificate is VALID")
-	} else {
-		fmt.Println("❌ Certificate is INVALID")
+	// ------------------------------------------------------------------
+	// STEP 7: Interpret verification result (business logic)
+	// ------------------------------------------------------------------
+	// Blockchain provides facts
+	// Backend converts facts into a trust decision
+	fmt.Println("Certificate Verification Result")
+
+	if !exists {
+		fmt.Println("Certificate is INVALID: not found on blockchain")
+		return
 	}
 
+	
 
-
+	fmt.Println("Certificate is VALID")
+	//fmt.Println("Issued by institution address:", issuer.Hex())
 }
