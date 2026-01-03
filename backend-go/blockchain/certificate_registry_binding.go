@@ -31,7 +31,7 @@ var (
 
 // CertificateRegistryMetaData contains all meta data concerning the CertificateRegistry contract.
 var CertificateRegistryMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_didRegistryAddress\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"certHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"issuer\",\"type\":\"address\"}],\"name\":\"CertificateIssued\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"certHash\",\"type\":\"bytes32\"}],\"name\":\"CertificateRevoked\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"certificates\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"certHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"issuer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isValid\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"didRegistry\",\"outputs\":[{\"internalType\":\"contractDIDRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_certHash\",\"type\":\"bytes32\"}],\"name\":\"issueCertificate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_certHash\",\"type\":\"bytes32\"}],\"name\":\"revokeCertificate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_certHash\",\"type\":\"bytes32\"}],\"name\":\"verifyCertificate\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_didRegistryAddress\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"certHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"issuer\",\"type\":\"address\"}],\"name\":\"CertificateIssued\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"certHash\",\"type\":\"bytes32\"}],\"name\":\"CertificateRevoked\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"certificates\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"issuer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isValid\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"didRegistry\",\"outputs\":[{\"internalType\":\"contractDIDRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_certHash\",\"type\":\"bytes32\"}],\"name\":\"issueCertificate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_certHash\",\"type\":\"bytes32\"}],\"name\":\"revokeCertificate\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_certHash\",\"type\":\"bytes32\"}],\"name\":\"verifyCertificate\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"exists\",\"type\":\"bool\"},{\"internalType\":\"address\",\"name\":\"issuer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"isValid\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]",
 }
 
 // CertificateRegistryABI is the input ABI used to generate the binding from.
@@ -182,27 +182,27 @@ func (_CertificateRegistry *CertificateRegistryTransactorRaw) Transact(opts *bin
 
 // Certificates is a free data retrieval call binding the contract method 0x742f0688.
 //
-// Solidity: function certificates(bytes32 ) view returns(bytes32 certHash, address issuer, bool isValid)
+// Solidity: function certificates(bytes32 ) view returns(address issuer, bool isValid, bool exists)
 func (_CertificateRegistry *CertificateRegistryCaller) Certificates(opts *bind.CallOpts, arg0 [32]byte) (struct {
-	CertHash [32]byte
-	Issuer   common.Address
-	IsValid  bool
+	Issuer  common.Address
+	IsValid bool
+	Exists  bool
 }, error) {
 	var out []interface{}
 	err := _CertificateRegistry.contract.Call(opts, &out, "certificates", arg0)
 
 	outstruct := new(struct {
-		CertHash [32]byte
-		Issuer   common.Address
-		IsValid  bool
+		Issuer  common.Address
+		IsValid bool
+		Exists  bool
 	})
 	if err != nil {
 		return *outstruct, err
 	}
 
-	outstruct.CertHash = *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-	outstruct.Issuer = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
-	outstruct.IsValid = *abi.ConvertType(out[2], new(bool)).(*bool)
+	outstruct.Issuer = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+	outstruct.IsValid = *abi.ConvertType(out[1], new(bool)).(*bool)
+	outstruct.Exists = *abi.ConvertType(out[2], new(bool)).(*bool)
 
 	return *outstruct, err
 
@@ -210,22 +210,22 @@ func (_CertificateRegistry *CertificateRegistryCaller) Certificates(opts *bind.C
 
 // Certificates is a free data retrieval call binding the contract method 0x742f0688.
 //
-// Solidity: function certificates(bytes32 ) view returns(bytes32 certHash, address issuer, bool isValid)
+// Solidity: function certificates(bytes32 ) view returns(address issuer, bool isValid, bool exists)
 func (_CertificateRegistry *CertificateRegistrySession) Certificates(arg0 [32]byte) (struct {
-	CertHash [32]byte
-	Issuer   common.Address
-	IsValid  bool
+	Issuer  common.Address
+	IsValid bool
+	Exists  bool
 }, error) {
 	return _CertificateRegistry.Contract.Certificates(&_CertificateRegistry.CallOpts, arg0)
 }
 
 // Certificates is a free data retrieval call binding the contract method 0x742f0688.
 //
-// Solidity: function certificates(bytes32 ) view returns(bytes32 certHash, address issuer, bool isValid)
+// Solidity: function certificates(bytes32 ) view returns(address issuer, bool isValid, bool exists)
 func (_CertificateRegistry *CertificateRegistryCallerSession) Certificates(arg0 [32]byte) (struct {
-	CertHash [32]byte
-	Issuer   common.Address
-	IsValid  bool
+	Issuer  common.Address
+	IsValid bool
+	Exists  bool
 }, error) {
 	return _CertificateRegistry.Contract.Certificates(&_CertificateRegistry.CallOpts, arg0)
 }
@@ -263,32 +263,51 @@ func (_CertificateRegistry *CertificateRegistryCallerSession) DidRegistry() (com
 
 // VerifyCertificate is a free data retrieval call binding the contract method 0x850c1768.
 //
-// Solidity: function verifyCertificate(bytes32 _certHash) view returns(bool)
-func (_CertificateRegistry *CertificateRegistryCaller) VerifyCertificate(opts *bind.CallOpts, _certHash [32]byte) (bool, error) {
+// Solidity: function verifyCertificate(bytes32 _certHash) view returns(bool exists, address issuer, bool isValid)
+func (_CertificateRegistry *CertificateRegistryCaller) VerifyCertificate(opts *bind.CallOpts, _certHash [32]byte) (struct {
+	Exists  bool
+	Issuer  common.Address
+	IsValid bool
+}, error) {
 	var out []interface{}
 	err := _CertificateRegistry.contract.Call(opts, &out, "verifyCertificate", _certHash)
 
+	outstruct := new(struct {
+		Exists  bool
+		Issuer  common.Address
+		IsValid bool
+	})
 	if err != nil {
-		return *new(bool), err
+		return *outstruct, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+	outstruct.Exists = *abi.ConvertType(out[0], new(bool)).(*bool)
+	outstruct.Issuer = *abi.ConvertType(out[1], new(common.Address)).(*common.Address)
+	outstruct.IsValid = *abi.ConvertType(out[2], new(bool)).(*bool)
 
-	return out0, err
+	return *outstruct, err
 
 }
 
 // VerifyCertificate is a free data retrieval call binding the contract method 0x850c1768.
 //
-// Solidity: function verifyCertificate(bytes32 _certHash) view returns(bool)
-func (_CertificateRegistry *CertificateRegistrySession) VerifyCertificate(_certHash [32]byte) (bool, error) {
+// Solidity: function verifyCertificate(bytes32 _certHash) view returns(bool exists, address issuer, bool isValid)
+func (_CertificateRegistry *CertificateRegistrySession) VerifyCertificate(_certHash [32]byte) (struct {
+	Exists  bool
+	Issuer  common.Address
+	IsValid bool
+}, error) {
 	return _CertificateRegistry.Contract.VerifyCertificate(&_CertificateRegistry.CallOpts, _certHash)
 }
 
 // VerifyCertificate is a free data retrieval call binding the contract method 0x850c1768.
 //
-// Solidity: function verifyCertificate(bytes32 _certHash) view returns(bool)
-func (_CertificateRegistry *CertificateRegistryCallerSession) VerifyCertificate(_certHash [32]byte) (bool, error) {
+// Solidity: function verifyCertificate(bytes32 _certHash) view returns(bool exists, address issuer, bool isValid)
+func (_CertificateRegistry *CertificateRegistryCallerSession) VerifyCertificate(_certHash [32]byte) (struct {
+	Exists  bool
+	Issuer  common.Address
+	IsValid bool
+}, error) {
 	return _CertificateRegistry.Contract.VerifyCertificate(&_CertificateRegistry.CallOpts, _certHash)
 }
 

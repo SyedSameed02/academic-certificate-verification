@@ -8,40 +8,37 @@ import (
 	"os"
 
 	"academic-certificate-verification-backend/blockchain"
-	"academic-certificate-verification-backend/internal/certificate"
+    "academic-certificate-verification-backend/internal/certificate"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// ContractsConfig represents deployed smart contract addresses
-// stored in config/contracts.json
+// ContractsConfig holds deployed contract addresses
+// Loaded from config/contracts.json
 type ContractsConfig struct {
 	DIDRegistry         string `json:"didRegistry"`
 	CertificateRegistry string `json:"certificateRegistry"`
 }
 
 func main() {
-	// Context is used to control blockchain calls
-	// It allows cancellation and timeouts if needed
+	// Context controls lifecycle of blockchain calls
 	ctx := context.Background()
 
 	// ------------------------------------------------------------------
 	// STEP 1: Connect to local Hardhat blockchain
 	// ------------------------------------------------------------------
-	// The backend communicates with the blockchain using an RPC endpoint
 	client, err := ethclient.Dial("http://127.0.0.1:8545")
 	if err != nil {
 		log.Fatal("Failed to connect to Ethereum node:", err)
 	}
+
 	fmt.Println("Connected to Ethereum node")
 
 	// ------------------------------------------------------------------
-	// STEP 2: Read deployed contract addresses
+	// STEP 2: Load deployed contract addresses
 	// ------------------------------------------------------------------
-	// Smart contract addresses are stored after deployment
-	// This avoids hardcoding addresses in code
 	configBytes, err := os.ReadFile("config/contracts.json")
 	if err != nil {
 		log.Fatal("Failed to read contracts.json:", err)
@@ -53,10 +50,9 @@ func main() {
 	}
 
 	// ------------------------------------------------------------------
-	// STEP 3: Create certificate data (off-chain)
+	// STEP 3: Construct certificate data (off-chain)
 	// ------------------------------------------------------------------
-	// This represents the original academic certificate information
-	// Blockchain never stores these fields directly
+	// Certificate data is never stored on-chain
 	cert := certificate.CertificateData{
 		StudentName: "Rahul Sharma",
 		RollNumber:  "CSE2021012",
@@ -66,63 +62,80 @@ func main() {
 	}
 
 	// ------------------------------------------------------------------
-	// STEP 4: Hash the certificate
+	// STEP 4: Hash certificate
 	// ------------------------------------------------------------------
-	// Hashing ensures:
-	// - Integrity (any change alters the hash)
-	// - Privacy (raw data is not stored on-chain)
-	// The same data always produces the same hash
+	// Hash ensures integrity and privacy
 	certHash := certificate.HashCertificate(cert)
 
 	// ------------------------------------------------------------------
-	// STEP 5: Load CertificateRegistry smart contract
+	// STEP 5: Load CertificateRegistry contract
 	// ------------------------------------------------------------------
-	// This contract stores and verifies certificate hashes
-	certificateRegistryAddress := common.HexToAddress(config.CertificateRegistry)
+	certificateRegistryAddr := common.HexToAddress(config.CertificateRegistry)
 
 	certificateRegistry, err := blockchain.NewCertificateRegistry(
-		certificateRegistryAddress,
+		certificateRegistryAddr,
 		client,
 	)
 	if err != nil {
-		log.Fatal("Failed to load CertificateRegistry contract:", err)
+		log.Fatal("Failed to load CertificateRegistry:", err)
 	}
 
 	// ------------------------------------------------------------------
-	// STEP 6: Call verification function (read-only)
+	// STEP 6: Load DIDRegistry contract
 	// ------------------------------------------------------------------
-	// CallOpts is used for view/pure contract calls
-	// No gas is required because this does not modify blockchain state
+	didRegistryAddr := common.HexToAddress(config.DIDRegistry)
+
+	didRegistry, err := blockchain.NewDIDRegistry(
+		didRegistryAddr,
+		client,
+	)
+	if err != nil {
+		log.Fatal("Failed to load DIDRegistry:", err)
+	}
+
+	// ------------------------------------------------------------------
+	// STEP 7: Perform read-only verification call
+	// ------------------------------------------------------------------
 	callOpts := &bind.CallOpts{
 		Context: ctx,
 	}
 
-	// The smart contract returns factual data only:
-	// - exists  : whether the certificate hash was issued
-	// - issuer  : address of issuing institution
-	// - revoked : whether the certificate was invalidated
-	exists, err := certificateRegistry.VerifyCertificate(
-		callOpts,
-		certHash,
-	)
+	// IMPORTANT:
+	// VerifyCertificate returns (struct, error), NOT multiple values
+	certInfo, err := certificateRegistry.VerifyCertificate(callOpts, certHash)
 	if err != nil {
-		log.Fatal("Certificate verification failed:", err)
+		log.Fatal("Blockchain verification failed:", err)
 	}
 
 	// ------------------------------------------------------------------
-	// STEP 7: Interpret verification result (business logic)
+	// STEP 8: Interpret verification result
 	// ------------------------------------------------------------------
-	// Blockchain provides facts
-	// Backend converts facts into a trust decision
 	fmt.Println("Certificate Verification Result")
 
-	if !exists {
+	// Case 1: Certificate never issued
+	if !certInfo.Exists {
 		fmt.Println("Certificate is INVALID: not found on blockchain")
 		return
 	}
 
-	
+	// Case 2: Certificate revoked
+	if !certInfo.IsValid {
+		fmt.Println("Certificate is INVALID: certificate has been revoked")
+		return
+	}
 
+	// Case 3: Validate issuer using DIDRegistry
+	isIssuerValid, err := didRegistry.IsValidIssuer(callOpts, certInfo.Issuer)
+	if err != nil {
+		log.Fatal("Issuer validation failed:", err)
+	}
+
+	if !isIssuerValid {
+		fmt.Println("Certificate is INVALID: issuer is not registered")
+		return
+	}
+
+	// Case 4: All checks passed
 	fmt.Println("Certificate is VALID")
-	//fmt.Println("Issued by institution address:", issuer.Hex())
+	fmt.Println("Issued by institution address:", certInfo.Issuer.Hex())
 }
