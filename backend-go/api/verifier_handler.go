@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"/blockchain"
+	"backend-go/blockchain"
 )
 
 type VerifyRequest struct {

@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"/blockchain"
-	"internal"
+
+	"backend-go/internal/certificate"
+	"backend-go/blockchain"
 )
 
 func IssueCertificate(w http.ResponseWriter, r *http.Request) {
-	var cert internal.Certificate
+	var cert certificate.CertificateData
 
 	if err := json.NewDecoder(r.Body).Decode(&cert); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -26,5 +27,26 @@ func IssueCertificate(w http.ResponseWriter, r *http.Request) {
 		"status": "issued",
 		"txHash": txHash,
 	})
+}
+
+func RevokeCertificate(w http.ResponseWriter, r *http.Request){
+	var cert certificate.CertificateData
+
+	if err := json.NewDecoder(r.Body).Decode(&cert); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	txHash,err := blockchain.RevokeCertificate(cert)
+
+	if err != nil {
+		http.Error(w, "Revocation Failed", http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "revoked",
+		"txHash": txHash,
+	})
+
 }
 
