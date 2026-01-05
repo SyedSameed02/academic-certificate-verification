@@ -26,11 +26,13 @@ async function main() {
     certificateRegistry: certificateRegistryAddress,
   };
 
-  fs.mkdirSync("../academic-certificate-verification-backend/config", { recursive: true });
-  fs.writeFileSync(
-    "../academic-certificate-verification-backend/config/contracts.json",
-    JSON.stringify(config, null, 2)
-  );
+fs.mkdirSync("../backend-go/config", { recursive: true });
+
+fs.writeFileSync(
+  "../backend-go/config/contracts.json",
+  JSON.stringify(config, null, 2)
+);
+
 
   console.log("Contract addresses saved to contracts.json");
 }
