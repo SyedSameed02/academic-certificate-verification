@@ -1,8 +1,11 @@
-module academic-certificate-verification-backend
+module backend-go
 
 go 1.24.0
 
-require github.com/ethereum/go-ethereum v1.16.7
+require (
+	github.com/ethereum/go-ethereum v1.16.7
+	github.com/gorilla/mux v1.8.1
+)
 
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect

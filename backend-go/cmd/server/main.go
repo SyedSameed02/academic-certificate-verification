@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"academic-certificate-verification-backend/blockchain"
-    "academic-certificate-verification-backend/internal/certificate"
+	"backend-go/blockchain"
+    "backend-go/internal/certificate"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
