@@ -24,7 +24,50 @@ func IssueCertificate(w http.ResponseWriter, r *http.Request) {
 	ipfsHash, _ := ipfs.Store(data)
 	vcObj.IPFSHash = ipfsHash
 
-	blockchain.RegisterCertificate(vcObj.Hash)
+	blockchain.IssueCertificate(vcObj.Hash)
 
 	json.NewEncoder(w).Encode(vcObj)
+}
+
+/*
+POST /api/issuer/revoke
+Body:
+{
+	"hash": "0xabc123hash"
+}
+
+Revokes a certificate by hash.
+Only issuer performs on-chain revocation.
+*/
+func RevokeCertificate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		Hash string `json:"hash"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Hash == "" {
+		http.Error(w, "certificate hash is required", http.StatusBadRequest)
+		return
+	}
+
+	// Call blockchain layer (abigen-backed)
+	if err := blockchain.RevokeCertificate(req.Hash); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "revoked",
+		"hash":   req.Hash,
+	})
 }

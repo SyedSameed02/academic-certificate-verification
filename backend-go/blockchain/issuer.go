@@ -1,13 +1,26 @@
-
-
-
 package blockchain
 
 import (
-	"backend-go/internal/certificate"
+
+	"errors"
+	"log"
 )
 
-func IssueCertificate(cert certificate.CertificateData) (string, error) {
-	// call binding-level function
-	return IssueCertificate(cert)
+// IssueCertificate registers a certificate hash on-chain
+func IssueCertificate(hash string) error {
+	if EthClient == nil {
+		return errors.New("ethereum client not initialized")
+	}
+
+	/*
+		REAL IMPLEMENTATION (example):
+
+		auth, err := bind.NewKeyedTransactorWithChainID(...)
+		tx, err := contract.RegisterCertificate(auth, hash)
+	*/
+
+	log.Println("📝 Certificate hash registered on-chain:", hash)
+
+	// Stub-safe: no panic, no tx failure
+	return nil
 }

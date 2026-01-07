@@ -1,20 +1,30 @@
 package blockchain
 
 import (
-	"context"
 	"log"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func NewClient() *ethclient.Client {
-	client, err := ethclient.Dial("http://127.0.0.1:8545")
-	if err != nil {
-		log.Fatal("Failed to connect to Ethereum node:", err)
-	}
-	return client
-}
+// Shared instances
+var (
+	EthClient *ethclient.Client
+	initOnce  sync.Once
+)
 
-func Context() context.Context {
-	return context.Background()
+// Init initializes ethereum client once
+func Init(rpcURL string) error {
+	var err error
+
+	initOnce.Do(func() {
+		EthClient, err = ethclient.Dial(rpcURL)
+		if err != nil {
+			log.Println("❌ Failed to connect to Ethereum:", err)
+			return
+		}
+		log.Println("✅ Ethereum client connected")
+	})
+
+	return err
 }

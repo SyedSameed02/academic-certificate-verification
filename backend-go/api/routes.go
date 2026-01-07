@@ -20,7 +20,7 @@ func SetupRoutes() http.Handler {
 	mux.HandleFunc("/api/student/share", student.ShareCredential)
 
 	// Verifier routes
-	mux.HandleFunc("/api/verifier/verify", verifier.VerifyCredential)
+	mux.HandleFunc("/api/verifier/verify", verifier.Verify)
 
 	return mux
 }

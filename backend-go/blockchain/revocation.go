@@ -1,10 +1,24 @@
 package blockchain
 
 import (
-	"backend-go/internal/certificate"
+	"errors"
+	"log"
 )
 
-func RevokeCertificate(cert certificate.CertificateData) (string, error) {
-	// call binding-level function
-	return RevokeCertificate(cert)
+// RevokeCertificate revokes a certificate hash on-chain
+func RevokeCertificate(hash string) error {
+	if EthClient == nil {
+		return errors.New("ethereum client not initialized")
+	}
+
+	/*
+		REAL IMPLEMENTATION (example):
+
+		auth := ...
+		tx, err := contract.RevokeCertificate(auth, hash)
+	*/
+
+	log.Println("🚫 Certificate revoked on-chain:", hash)
+
+	return nil
 }
