@@ -1,24 +1,26 @@
 package api
 
-import "github.com/gorilla/mux"
+import (
+	"net/http"
 
-func RegisterRoutes(router *mux.Router) {
-	api := router.PathPrefix("/api").Subrouter()
+	"backend-go/api/issuer"
+	"backend-go/api/student"
+	"backend-go/api/verifier"
+)
 
-	// Issuer
-	api.HandleFunc("/issuer/issue", IssueCertificate).Methods("POST")
-	api.HandleFunc("/issuer/revoke", RevokeCertificate).Methods("POST")
-	//api.HandleFunc("/issuer/certificates/{did}", GetIssuedCertificates).Methods("GET")
+func SetupRoutes() http.Handler {
+	mux := http.NewServeMux()
 
-	// Student
-	//api.HandleFunc("/student/credentials/{did}", GetStudentCredentials).Methods("GET")
-	//api.HandleFunc("/student/share", ShareCredential).Methods("POST")
+	// Issuer routes
+	mux.HandleFunc("/api/issuer/issue", issuer.IssueCertificate)
+	mux.HandleFunc("/api/issuer/revoke", issuer.RevokeCertificate)
 
-	// Verifier
-	api.HandleFunc("/verifier/verify", VerifyCertificate).Methods("POST")
-	//api.HandleFunc("/verifier/verify-zkp", VerifyWithZKP).Methods("POST")
+	// Student routes
+	mux.HandleFunc("/api/student/credentials", student.GetCredentials)
+	mux.HandleFunc("/api/student/share", student.ShareCredential)
 
-	// DID
-	//api.HandleFunc("/did/create", CreateDID).Methods("POST")
-	//api.HandleFunc("/did/resolve/{did}", ResolveDID).Methods("GET")
+	// Verifier routes
+	mux.HandleFunc("/api/verifier/verify", verifier.VerifyCredential)
+
+	return mux
 }
