@@ -1,0 +1,8 @@
+ZKP - zero proof knowledge used to reveal selective data or hide the data. this preserves privacy of the cerificate holder.
+
+DID - Dencentralised identifier. this like registered Id of the entity that interacts with the blockchain( student wallet, issuer, verifier).
+
+Vc - verifiable credentials. this is provided to the certificate through some hashing method. it is to identitfy the cerificate. every certificate has unqiue hash( VC).
+
+IPFS - Interplantery file system. it is a Dencentralised  storage system. used to store certificate pdfs. 
+
