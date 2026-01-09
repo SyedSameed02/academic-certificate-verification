@@ -8,15 +8,14 @@ import (
 	"backend-go/api/verifier"
 )
 
-func SetupRoutes() http.Handler {
+func NewRouter() http.Handler {
 	mux := http.NewServeMux()
 
 	// Issuer routes
 	mux.HandleFunc("/api/issuer/issue", issuer.IssueCertificate)
-	mux.HandleFunc("/api/issuer/revoke", issuer.RevokeCertificate)
 
 	// Student routes
-	mux.HandleFunc("/api/student/credentials", student.GetCredentials)
+	mux.HandleFunc("/api/student/credentials/", student.GetCredentials)
 	mux.HandleFunc("/api/student/share", student.ShareCredential)
 
 	// Verifier routes
