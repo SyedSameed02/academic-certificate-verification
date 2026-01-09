@@ -2,16 +2,31 @@ package main
 
 import (
 	"log"
-	"net/http"
 
+	"backend-go/blockchain"
 	"backend-go/api"
+	"backend-go/config"
 )
 
 func main() {
-	router := api.SetupRoutes()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal("❌ Failed to load config:", err)
+	}
 
-	log.Println("🚀 Server running on :8080")
-	if err := http.ListenAndServe(":8080", router); err != nil {
-		log.Fatal(err)
+	err = blockchain.Init(
+		cfg.BlockChain.RPCUrl,
+		cfg.BlockChain.CertificateRegistry,
+		cfg.BlockChain.DIDRegistry,
+	)
+	if err != nil {
+		log.Fatal("❌ Blockchain initialization failed:", err)
+	}
+
+	log.Println("🚀 Backend starting on port", cfg.Server.Port)
+
+	err = api.StartServer(cfg)
+	if err != nil {
+		log.Fatal("❌ Server stopped:", err)
 	}
 }
