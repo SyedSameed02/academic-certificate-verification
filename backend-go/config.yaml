@@ -1,0 +1,7 @@
+server:
+  port: 8080
+
+blockchain:
+  rpcUrl: "http://127.0.0.1:8545"
+  certificateRegistry: "0xYourCertificateRegistryAddress"
+  didRegistry: "0xYourDIDRegistryAddress"
