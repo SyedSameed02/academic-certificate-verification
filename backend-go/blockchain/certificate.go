@@ -2,21 +2,20 @@ package blockchain
 
 import (
 	"errors"
+	"fmt"
 )
 
-// IsCertificateValid checks existence & non-revocation
 func IsCertificateValid(hash string) (bool, error) {
 	if EthClient == nil {
 		return false, errors.New("ethereum client not initialized")
 	}
 
-	/*
-		REAL IMPLEMENTATION (example):
+	
+	valid, err := VerifyCertificate(hash)
+	if err != nil {
+		return false, err
+	}
+	fmt.Sprint(valid)
 
-		valid, err := contract.IsValid(nil, hash)
-		return valid, err
-	*/
-
-	// Stub behavior (safe default)
 	return true, nil
 }
