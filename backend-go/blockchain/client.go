@@ -2,60 +2,58 @@ package blockchain
 
 import (
 	"context"
-	"errors"
+	"crypto/ecdsa"
 	"log"
-	"sync"
+	"os"
+	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-var (
-	EthClient *ethclient.Client
+type Client struct {
+	Eth      *ethclient.Client
+	Auth     *bind.TransactOpts
+	CallOpts *bind.CallOpts
+}
 
-	CertificateRegistryInstance *CertificateRegistry
-	DIDRegistryInstance         *DIDRegistry
+func NewClient() *Client {
+	rpc := os.Getenv("RPC_URL")
+	key := os.Getenv("PRIVATE_KEY")
 
-	initOnce sync.Once
-	initErr  error
-)
-
-func Init(
-	rpcURL string,
-	certificateRegistryAddr string,
-	didRegistryAddr string,
-) error {
-
-	initOnce.Do(func() {
-		EthClient, initErr = ethclient.DialContext(context.Background(), rpcURL)
-		if initErr != nil {
-			log.Println("❌ Failed to connect to Ethereum:", initErr)
-			return
-		}
-		log.Println("✅ Ethereum client connected")
-
-		CertificateRegistryInstance, initErr = NewCertificateRegistry(
-			common.HexToAddress(certificateRegistryAddr),
-			EthClient,
-		)
-		if initErr != nil {
-			return
-		}
-
-		DIDRegistryInstance, initErr = NewDIDRegistry(
-			common.HexToAddress(didRegistryAddr),
-			EthClient,
-		)
-		if initErr != nil {
-			return
-		}
-
-		log.Println("✅ Smart contract instances initialized")
-	})
-
-	if EthClient == nil {
-		return errors.New("ethereum client initialization failed")
+	eth, err := ethclient.Dial(rpc)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	return initErr
+	privateKey, err := crypto.HexToECDSA(key[2:])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	publicKey := privateKey.Public().(*ecdsa.PublicKey)
+
+	auth, err := bind.NewKeyedTransactorWithChainID(
+		privateKey,
+		bigChainID(),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth.From = crypto.PubkeyToAddress(*publicKey)
+
+	return &Client{
+		Eth:  eth,
+		Auth: auth,
+		CallOpts: &bind.CallOpts{
+			Context: context.Background(),
+		},
+	}
+}
+func bigChainID() *big.Int {
+    id := os.Getenv("CHAIN_ID")
+    chainID, _ := new(big.Int).SetString(id, 10)
+    return chainID
 }
