@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
+	"math/big"
 
 	"backend-go/blockchain"
 	"backend-go/zkp"
-	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/google/uuid"
 )
 
 type VerifyRequest struct {
@@ -29,26 +31,36 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// --- Save proof files temporarily ---
-	if err := os.WriteFile("tmp_proof.json", req.Proof, 0644); err != nil {
-	http.Error(w, "failed to save proof", http.StatusInternalServerError)
-	return
-}
+	// --- Create unique temp files ---
+	id := uuid.New().String()
 
+	proofPath := filepath.Join(os.TempDir(), "proof_"+id+".json")
+	publicPath := filepath.Join(os.TempDir(), "public_"+id+".json")
+
+	// Ensure cleanup
+	defer os.Remove(proofPath)
+	defer os.Remove(publicPath)
+
+	// --- Write proof ---
+	if err := os.WriteFile(proofPath, req.Proof, 0644); err != nil {
+		http.Error(w, "failed to save proof", http.StatusInternalServerError)
+		return
+	}
+
+	// --- Write public inputs ---
 	publicBytes, err := json.Marshal(req.Public)
 	if err != nil {
 		http.Error(w, "invalid public inputs", http.StatusBadRequest)
 		return
 	}
 
-	if err := os.WriteFile("tmp_public.json", publicBytes, 0644); err != nil {
+	if err := os.WriteFile(publicPath, publicBytes, 0644); err != nil {
 		http.Error(w, "failed to save public inputs", http.StatusInternalServerError)
 		return
 	}
 
-
 	// --- ZKP verification ---
-	valid, err := zkp.VerifyProof("tmp_proof.json", "tmp_public.json")
+	valid, err := zkp.VerifyProof(proofPath, publicPath)
 	if err != nil || !valid {
 		respond(w, VerifyResponse{
 			Verified: false,
@@ -57,7 +69,7 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// --- Extract onChainHash ---
+	// --- Extract on-chain hash ---
 	if len(req.Public) < 1 {
 		respond(w, VerifyResponse{
 			Verified: false,
@@ -66,8 +78,6 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
-	// public[0] is decimal string from ZKP
 	poseidonInt, ok := new(big.Int).SetString(req.Public[0], 10)
 	if !ok {
 		respond(w, VerifyResponse{
@@ -77,13 +87,10 @@ func VerifyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-// Convert big.Int → bytes32
-	certHash := common.BytesToHash(poseidonInt.FillBytes(make([]byte, 32)))
-
-
-
-
-
+	// Convert big.Int → bytes32
+	certHash := common.BytesToHash(
+		poseidonInt.FillBytes(make([]byte, 32)),
+	)
 
 	// --- Blockchain checks ---
 	client := blockchain.NewClient()
