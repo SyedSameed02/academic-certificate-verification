@@ -1,69 +1,69 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./DIDRegistry.sol";
+interface IDIDRegistry {
+    function isValidIssuer(address issuer) external view returns (bool);
+}
 
 contract CertificateRegistry {
 
-    DIDRegistry public didRegistry;
-
     struct Certificate {
         address issuer;
-        bool isValid;
-        bool exists;
+        uint256 issuedAt;
+        bool revoked;
     }
 
-    mapping(bytes32 => Certificate) public certificates;
+    mapping(bytes32 => Certificate) private certificates;
 
-    event CertificateIssued(bytes32 certHash, address issuer);
-    event CertificateRevoked(bytes32 certHash);
+    IDIDRegistry public didRegistry;
 
-    constructor(address _didRegistryAddress) {
-        didRegistry = DIDRegistry(_didRegistryAddress);
+    event CertificateIssued(bytes32 indexed certHash, address indexed issuer);
+    event CertificateRevoked(bytes32 indexed certHash, address indexed issuer);
+
+    constructor(address _didRegistry) {
+        require(_didRegistry != address(0), "Invalid DIDRegistry address");
+        didRegistry = IDIDRegistry(_didRegistry);
     }
 
-    modifier onlyValidIssuer() {
-        require(
-            didRegistry.isValidIssuer(msg.sender),
-            "Issuer not authorized"
-        );
-        _;
-    }
+    function issueCertificate(bytes32 certHash) external {
+        require(didRegistry.isValidIssuer(msg.sender), "Unauthorized issuer");
+        require(certHash != bytes32(0), "Invalid hash");
+        require(certificates[certHash].issuer == address(0), "Certificate exists");
 
-    // Issue a new certificate
-    function issueCertificate(bytes32 _certHash) public onlyValidIssuer {
-        require(!certificates[_certHash].exists, "Certificate already exists");
-
-        certificates[_certHash] = Certificate({
+        certificates[certHash] = Certificate({
             issuer: msg.sender,
-            isValid: true,
-            exists: true
+            issuedAt: block.timestamp,
+            revoked: false
         });
 
-        emit CertificateIssued(_certHash, msg.sender);
+        emit CertificateIssued(certHash, msg.sender);
     }
 
-    // Revoke an existing certificate
-    function revokeCertificate(bytes32 _certHash) public onlyValidIssuer {
-        require(certificates[_certHash].exists, "Certificate does not exist");
-        require(certificates[_certHash].isValid, "Certificate already revoked");
+    function revokeCertificate(bytes32 certHash) external {
+        require(didRegistry.isValidIssuer(msg.sender), "Unauthorized issuer");
 
-        certificates[_certHash].isValid = false;
+        Certificate storage cert = certificates[certHash];
+        require(cert.issuer != address(0), "Certificate not found");
+        require(cert.issuer == msg.sender, "Only issuer can revoke");
+        require(!cert.revoked, "Already revoked");
 
-        emit CertificateRevoked(_certHash);
+        cert.revoked = true;
+
+        emit CertificateRevoked(certHash, msg.sender);
     }
 
-    // Verify certificate details
-    function verifyCertificate(bytes32 _certHash)
-        public
+    function getCertificate(bytes32 certHash)
+        external
         view
-        returns (
-            bool exists,
-            address issuer,
-            bool isValid
-        )
+        returns (address issuer, bool revoked, uint256 issuedAt)
     {
-        Certificate memory cert = certificates[_certHash];
-        return (cert.exists, cert.issuer, cert.isValid);
+        Certificate storage cert = certificates[certHash];
+        require(cert.issuer != address(0), "Certificate not found");
+
+        return (cert.issuer, cert.revoked, cert.issuedAt);
+    }
+
+    function exists(bytes32 certHash) external view returns (bool) {
+        return certificates[certHash].issuer != address(0);
     }
 }

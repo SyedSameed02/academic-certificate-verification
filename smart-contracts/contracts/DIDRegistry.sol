@@ -6,17 +6,18 @@ contract DIDRegistry {
     address public owner;
 
     struct Issuer {
-        string did;
-        bool isRegistered;
+        string did;        // DID string (for audit / off-chain resolution)
+        bool active;
     }
 
-    mapping(address => Issuer) public issuers;
+    mapping(address => Issuer) private issuers;
 
-    event IssuerRegistered(address issuer, string did);
-    event IssuerRemoved(address issuer);
+    event IssuerRegistered(address indexed issuer, string did);
+    event IssuerDeactivated(address indexed issuer);
+    event IssuerActivated(address indexed issuer);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner allowed");
+        require(msg.sender == owner, "Only owner");
         _;
     }
 
@@ -24,17 +25,60 @@ contract DIDRegistry {
         owner = msg.sender;
     }
 
-    function registerIssuer(address _issuer, string memory _did) public onlyOwner {
-        issuers[_issuer] = Issuer(_did, true);
-        emit IssuerRegistered(_issuer, _did);
+    // Register a new issuer
+    function registerIssuer(address issuer, string calldata did)
+        external
+        onlyOwner
+    {
+        require(issuer != address(0), "Invalid address");
+        require(!issuers[issuer].active, "Issuer already active");
+
+        issuers[issuer] = Issuer({
+            did: did,
+            active: true
+        });
+
+        emit IssuerRegistered(issuer, did);
     }
 
-    function removeIssuer(address _issuer) public onlyOwner {
-        issuers[_issuer].isRegistered = false;
-        emit IssuerRemoved(_issuer);
+    // Deactivate an issuer (revokes future issue/revoke rights)
+    function deactivateIssuer(address issuer)
+        external
+        onlyOwner
+    {
+        require(issuers[issuer].active, "Issuer not active");
+
+        issuers[issuer].active = false;
+        emit IssuerDeactivated(issuer);
     }
 
-    function isValidIssuer(address _issuer) public view returns (bool) {
-        return issuers[_issuer].isRegistered;
+    // Reactivate an issuer
+    function activateIssuer(address issuer)
+        external
+        onlyOwner
+    {
+        require(!issuers[issuer].active, "Issuer already active");
+
+        issuers[issuer].active = true;
+        emit IssuerActivated(issuer);
+    }
+
+    // --- Read functions ---
+
+    function isValidIssuer(address issuer)
+        external
+        view
+        returns (bool)
+    {
+        return issuers[issuer].active;
+    }
+
+    function getIssuerDID(address issuer)
+        external
+        view
+        returns (string memory)
+    {
+        require(issuers[issuer].active, "Issuer not active");
+        return issuers[issuer].did;
     }
 }
