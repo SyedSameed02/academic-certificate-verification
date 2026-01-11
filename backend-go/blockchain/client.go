@@ -4,8 +4,9 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"log"
-	"os"
 	"math/big"
+	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -27,7 +28,14 @@ func NewClient() *Client {
 		log.Fatal(err)
 	}
 
-	privateKey, err := crypto.HexToECDSA(key[2:])
+
+
+	key = strings.TrimPrefix(key, "0x")
+	if len(key) != 64 {
+		log.Fatalf("PRIVATE_KEY must be 64 hex chars (32 bytes), got %d", len(key))
+	}
+
+	privateKey, err := crypto.HexToECDSA(key)
 	if err != nil {
 		log.Fatal(err)
 	}

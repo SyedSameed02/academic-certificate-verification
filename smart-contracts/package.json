@@ -19,5 +19,8 @@
     "test": "test"
   },
   "keywords": [],
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "ethers": "^6.16.0"
+  }
 }
