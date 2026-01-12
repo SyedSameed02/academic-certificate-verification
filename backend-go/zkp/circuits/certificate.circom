@@ -26,4 +26,4 @@ template CertificateProof() {
     gte.out === 1;
 }
 
-component main = CertificateProof();
+component main {public [onChainHash, MIN_CGPA]}= CertificateProof();

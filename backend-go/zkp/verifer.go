@@ -11,7 +11,7 @@ func VerifyProof(proofPath, publicPath string) (bool, error) {
 		"snarkjs",
 		"groth16",
 		"verify",
-		"zkp/keys/verification_key.json",
+		"zkp/verification_key.json",
 		publicPath,
 		proofPath,
 	)
