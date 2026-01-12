@@ -3,7 +3,6 @@ $ErrorActionPreference = "Stop"
 $ARTIFACTS = "smart-contracts/artifacts/contracts"
 $OUT_DIR = "backend-go/contracts"
 $TMP_DIR = "tmp-abi"
-
 # Create temp and output dirs
 New-Item -ItemType Directory -Force -Path $OUT_DIR | Out-Null
 New-Item -ItemType Directory -Force -Path $TMP_DIR | Out-Null
