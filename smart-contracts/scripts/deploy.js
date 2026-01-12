@@ -34,8 +34,8 @@ fs.writeFileSync(
 );
 
   console.log("\nDeployment complete:");
-  console.log("DIDRegistry:", didRegistry.address);
-  console.log("CertificateRegistry:", certificateRegistry.address);
+  console.log("DIDRegistry:", didRegistryAddress);
+  console.log("CertificateRegistry:", certificateRegistryAddress);
   console.log("Contract addresses saved to contracts.json");
 }
 
