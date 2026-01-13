@@ -7,7 +7,7 @@ This document explains how to regenerate all ZKP artifacts for the project:
 - proof generation (`proof.json`, `public.json`)
 - verification key export (`verification_key.json`)
 
-> ✅ Run commands from **backend-go/** directory.
+> Run commands from **backend-go/** directory.
 
 ---
 
@@ -89,7 +89,7 @@ snarkjs zkey contribute zkp/keys/certificate_0000.zkey zkp/keys/certificate_fina
 ```
 
 Output:
-- `zkp/keys/certificate_final.zkey` ✅
+- `zkp/keys/certificate_final.zkey` 
 
 ---
 
@@ -98,7 +98,7 @@ Output:
 ### Fix CommonJS vs ESM issue (important)
 Your project has `"type": "module"` in `package.json`, but Circom-generated witness code is CommonJS.
 
-✅ Create a local `package.json` inside:
+ Create a local `package.json` inside:
 
 ```
 zkp/build/certificate_js/package.json
@@ -122,7 +122,7 @@ node zkp/build/certificate_js/generate_witness.js `
 ```
 
 Output:
-- `zkp/build/witness.wtns` ✅
+- `zkp/build/witness.wtns` 
 
 ---
 
@@ -175,4 +175,4 @@ snarkjs groth16 verify `
 ```
 
 Expected output:
-- `OK` ✅
+- `OK` 

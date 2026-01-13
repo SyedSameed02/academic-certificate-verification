@@ -8,7 +8,7 @@ This guide explains how to generate smart contract artifacts using Hardhat:
 - Register and activate issuer
 - Verify deployment outputs
 
-> ✅ Run commands inside the **smart-contracts/** folder unless specified.
+> Run commands inside the **smart-contracts/** folder unless specified.
 
 ---
 
@@ -68,7 +68,7 @@ Deployment prints the contract addresses for:
 - DIDRegistry
 - CertificateRegistry
 
-✅ Copy these addresses into backend `.env`:
+Copy these addresses into backend `.env`:
 
 Example:
 
@@ -133,7 +133,7 @@ cd ..
 node scripts/registerIssuer.js
 ```
 
-✅ This calls:
+This calls:
 - `registerIssuer(address, did)` OR equivalent
 - `activateIssuer(address)`
 

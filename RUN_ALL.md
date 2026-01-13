@@ -10,7 +10,7 @@
   - `scripts/registerIssuer.js` 
 
 ### 1) Start local Hardhat blockchain
-📍 Run inside **smart-contracts/** (terminal 1):
+Run inside **smart-contracts/** (terminal 1):
 
 ```powershell
 npx hardhat node
@@ -60,9 +60,3 @@ Open **new terminal** inside **backend-go/** (terminal 5):
 ```powershell
 ./test-dev.ps1
 ```
-
-✅ Expected output:
-- Issue → prints certificate hash
-- Verify PASS → `{ "verified": true }`
-- Revoke → `{ "status": "revoked" }`
-- Verify again FAIL → `{ "verified": false, "reason": "certificate_revoked" }`

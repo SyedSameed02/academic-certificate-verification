@@ -2,5 +2,24 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "ethers": "^6.16.0"
-  }
+  },
+  "name": "academic-certificate-verification",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SyedSameed02/academic-certificate-verification.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SyedSameed02/academic-certificate-verification/issues"
+  },
+  "homepage": "https://github.com/SyedSameed02/academic-certificate-verification#readme"
 }
